@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vòng Quay May Mắn - Lì Xì Tết</title>
+    <style>
+        :root {
+            --tet-red: #D21404;
+            --tet-gold: #FFD700;
+            --tet-bg: #ffe6e6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--tet-red);
+            background-image: radial-gradient(circle, #ff4d4d, #D21404);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        /* --- Container Chính --- */
+        .container {
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 {
+            color: var(--tet-gold);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+            font-size: 2rem;
+            text-transform: uppercase;
+        }
+
+        /* --- Màn hình Đăng nhập --- */
+        .login-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid var(--tet-gold);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 25px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .btn-start {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .btn-start, .btn-spin {
+            background: linear-gradient(to bottom, #ffeb3b, #fbc02d);
+            color: #d32f2f;
+            font-weight: bold;
+            padding: 12px 30px;
+            border-radius: 25px;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 0 #c49000;
+            transition: transform 0.1s;
+        }
+
+        .btn-start:active, .btn-spin:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* --- Vòng Quay --- */
+        .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 30px;
+        }
+
+        /* Mũi tên chỉ định */
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+            z-index: 10;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 10px solid var(--tet-gold);
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            transition: transform 5s cubic-bezier(0.25, 0.1, 0.25, 1); /* Ease-out effect */
+            background: #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+        
+        .segment span {
+            position: absolute;
+            top: 35%;
+            left: 60%;
+            transform: rotate(45deg);
+            white-space: nowrap;
+        }
+
+        /* --- Thông báo trạng thái --- */
+        .status-msg {
+            margin-top: 15px;
+            font-size: 14px;
+            height: 20px;
+            color: var(--tet-gold);
+        }
+
+        /* Popup kết quả */
+        .result-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .result-box {
+            background: white;
+            color: #D21404;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            animation: popIn 0.3s ease-out;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="screen-login" class="login-box">
+            <h1>🧧 Lì Xì Tết 2026</h1>
+            <p>Nhập tên để nhận lộc đầu năm!</p>
+            <input type="text" id="username" placeholder="Họ và Tên của bạn...">
+            <br>
+            <button class="btn-start" onclick="startGame()" ontouchend="startGame()">Bắt đầu</button>
+        </div>
+
+        <div id="screen-wheel" class="hidden">
+            <h2 id="player-display" style="color: var(--tet-gold);"></h2>
+            
+            <div class="wheel-container">
+                <div class="pointer"></div>
+                <div class="wheel" id="wheel">
+                    </div>
+            </div>
+
+            <button class="btn-spin" id="spin-btn" onclick="spinWheel()">QUAY NGAY</button>
+            <div class="status-msg" id="status-msg"></div>
+        </div>
+    </div>
+
+    <div id="result-modal" class="hidden result-overlay">
+        <div class="result-box">
+            <h2>🎉 Chúc Mừng! 🎉</h2>
+            <p>Bạn đã nhận được lì xì:</p>
+            <h1 id="result-amount" style="font-size: 40px; margin: 10px 0;"></h1>
+            <p id="save-status">Đang lưu kết quả...</p>
+            <button class="btn-start" onclick="closeModal()">Đóng</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CẤU HÌNH ---
+        // Dán URL Google Apps Script của bạn vào đây:
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylO5eZ7olixoNqW-Z8cbY5utD8YVp0Mwn2680kT-EfzMu89dzNuYSLZNpNf7FK8LuuBg/exec"; 
+
+        // --- CẬP NHẬT: Danh sách giải thưởng có tỷ lệ (percent) ---
+        const PRIZES = [
+            // percent: Tỷ lệ trúng (0-1). Tổng các giải 'real' nên xấp xỉ 1 (100%)
+            { label: "5k",   value: "5.000đ",   color: "#FF5733", type: "real", percent: 0.40 }, // 40% trúng
+            { label: "10k",  value: "10.000đ",  color: "#FFC300", type: "real", percent: 0.30 }, // 30% trúng
+            { label: "20k",  value: "20.000đ",  color: "#DAF7A6", type: "real", percent: 0.15 }, // 15% trúng
+            { label: "50k",  value: "50.000đ",  color: "#33FF57", type: "real", percent: 0.10 }, // 10% trúng
+            { label: "100k", value: "100.000đ", color: "#3385FF", type: "real", percent: 0.05 }, // 5% trúng (Rất khó)
+            // Các giải ảo thì percent = 0 hoặc type = virtual
+            { label: "200k", value: "200.000đ", color: "#8033FF", type: "virtual", percent: 0 }, 
+            { label: "500k", value: "500.000đ", color: "#FF33A8", type: "virtual", percent: 0 }, 
+            { label: "999k", value: "999.999đ", color: "#FF3333", type: "virtual", percent: 0 }  
+        ];
+
+        let currentUser = "";
+        let isSpinning = false;
+        const wheel = document.getElementById('wheel');
+        const SEGMENT_COUNT = 8;
+        const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
+
+        // --- KHỞI TẠO VÒNG QUAY (VẼ UI) ---
+        function initWheel() {
+            PRIZES.forEach((prize, index) => {
+                const segment = document.createElement('div');
+                segment.className = 'segment';
+            });
+
+            // Tạo màu nền bằng conic-gradient
+            let gradientStr = "";
+            PRIZES.forEach((p, i) => {
+                const start = i * (100/SEGMENT_COUNT);
+                const end = (i + 1) * (100/SEGMENT_COUNT);
+                gradientStr += `${p.color} ${start}% ${end}%, `;
+            });
+            wheel.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
+
+            // Thêm chữ (Labels)
+            PRIZES.forEach((p, i) => {
+                const label = document.createElement('div');
+                label.style.position = 'absolute';
+                label.style.top = '0';
+                label.style.left = '50%';
+                label.style.height = '50%'; // Bán kính
+                label.style.width = '20px'; // Chiều rộng ảo để căn giữa
+                label.style.transformOrigin = 'bottom center';
+                
+                const angle = (i * SEGMENT_ANGLE) + (SEGMENT_ANGLE / 2);
+                label.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+                
+                const text = document.createElement('span');
+                text.innerText = p.label;
+                text.style.display = 'block';
+                text.style.marginTop = '20px';
+                text.style.fontWeight = 'bold';
+                text.style.color = '#fff';
+                text.style.textShadow = '1px 1px 2px #000';
+                
+                label.appendChild(text);
+                wheel.appendChild(label);
+            });
+        }
+
+        // --- LOGIC CHUYỂN MÀN HÌNH ---
+        function startGame() {
+            const input = document.getElementById('username');
+            if (!input.value.trim()) {
+                alert("Vui lòng nhập họ tên!");
+                return;
+            }
+            currentUser = input.value.trim();
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-wheel').classList.remove('hidden');
+            document.getElementById('player-display').innerText = `Chào bạn: ${currentUser}`;
+            
+            initWheel();
+        }
+
+        // --- LOGIC QUAY (CORE - ĐÃ CẬP NHẬT TỶ LỆ) ---
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+            document.getElementById('spin-btn').disabled = true;
+            document.getElementById('status-msg').innerText = "";
+
+            // --- 1. Chọn giải thưởng dựa trên tỷ lệ % ---
+            const random = Math.random(); // Số ngẫu nhiên từ 0.0 đến 1.0
+            let cumulativePercent = 0;
+            let winningIndex = -1;
+
+            for (let i = 0; i < PRIZES.length; i++) {
+                // Chỉ xét các giải Real để cộng dồn phần trăm
+                if (PRIZES[i].type === 'real') {
+                    cumulativePercent += PRIZES[i].percent;
+                    // Nếu số ngẫu nhiên rơi vào khoảng này -> TRÚNG
+                    if (random < cumulativePercent) {
+                        winningIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // Fallback: Nếu tính toán sai hoặc tổng % < 1 mà random lại lớn hơn, 
+            // mặc định trúng giải real đầu tiên (5k) cho an toàn.
+            if (winningIndex === -1) {
+                winningIndex = PRIZES.findIndex(p => p.type === 'real');
+            }
+
+            // --- 2. Tính toán góc quay ---
+            // Mũi tên chỉ ở hướng 12h (0 độ). 
+            // Góc của tâm ô trúng
+            const segmentCenter = (winningIndex * SEGMENT_ANGLE) + (SEGMENT_ANGLE / 2);
+            
+            // Quay ít nhất 5 vòng (1800 độ) + phần bù để đến đích
+            // Thêm random +/- 10 độ để kim không chỉ thẳng tắp tâm ô cho tự nhiên
+            const randomOffset = Math.floor(Math.random() * 20) - 10; 
+            const totalRotation = (360 * 6) - segmentCenter + randomOffset; 
+
+            // --- 3. Thực hiện quay CSS ---
+            wheel.style.transform = `rotate(${totalRotation}deg)`;
+
+            // --- 4. Xử lý khi quay xong ---
+            setTimeout(() => {
+                showResult(winningIndex);
+            }, 5000); 
+        }
+
+        // --- XỬ LÝ KẾT QUẢ & GỬI DATA ---
+        function showResult(index) {
+            const prize = PRIZES[index];
+            
+            // Hiển thị Popup
+            document.getElementById('result-modal').classList.remove('hidden');
+            document.getElementById('result-amount').innerText = prize.value;
+            
+            // Gửi dữ liệu
+            sendToGoogleSheet(prize.value);
+        }
+
+        function sendToGoogleSheet(amount) {
+            const statusEl = document.getElementById('save-status');
+            
+            if (GOOGLE_SCRIPT_URL === "DÁN_URL_GOOGLE_APPS_SCRIPT_CUA_BAN_VAO_DAY") {
+                statusEl.innerText = "Chưa cấu hình URL Google Sheet!";
+                return;
+            }
+
+            const url = `${GOOGLE_SCRIPT_URL}?name=${encodeURIComponent(currentUser)}&amount=${encodeURIComponent(amount)}`;
+
+            fetch(url, {
+                mode: 'no-cors',
+                method: "GET"
+            }).then(() => {
+                statusEl.innerText = "Đã lưu thành công ✅";
+                statusEl.style.color = "green";
+                statusEl.style.fontWeight = "bold";
+            }).catch(err => {
+                console.error(err);
+                statusEl.innerText = "Lỗi kết nối ❌";
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('result-modal').classList.add('hidden');
+            document.getElementById('spin-btn').innerText = "HẾT LƯỢT";
+        }
+    </script>
+</body>
+</html>
